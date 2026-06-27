@@ -15,6 +15,11 @@ const editingTask = ref<Task | null>(null)
 const selectedStatus = ref<TaskStatus | ''>('')
 const highlightedId = ref<number | null>(null)
 
+const filteredTasks = computed(() => {
+  if (!selectedStatus.value) return store.tasks
+  return store.tasks.filter((t) => t.status === selectedStatus.value)
+})
+
 const statusCounts = computed(() => {
   const counts: Record<string, number> = { '': store.tasks.length }
   for (const status of ['TODO', 'IN_PROGRESS', 'DONE']) {
@@ -32,8 +37,7 @@ onMounted(() => {
 })
 
 async function loadTasks() {
-  const status = selectedStatus.value || undefined
-  await store.fetchTasks(status)
+  await store.fetchTasks()
 }
 
 function handleCreated() {
@@ -116,7 +120,7 @@ function handleStatusChanged(updatedTask: Task) {
     </div>
 
     <!-- Empty State -->
-    <div v-else-if="store.tasks.length === 0" class="empty-state">
+    <div v-else-if="filteredTasks.length === 0" class="empty-state">
       <div class="empty-icon">&#9998;</div>
       <p class="empty-text">暂无任务</p>
       <p class="empty-hint">点击上方「新建任务」开始记录</p>
@@ -125,7 +129,7 @@ function handleStatusChanged(updatedTask: Task) {
     <!-- Task List -->
     <TransitionGroup v-else name="list" tag="div" class="task-list">
       <div
-        v-for="(task, index) in store.tasks"
+        v-for="(task, index) in filteredTasks"
         :key="task.id"
         class="task-card"
         :class="[task.status.toLowerCase(), { highlighted: highlightedId === task.id }]"
